@@ -1,0 +1,58 @@
+# Maintainer: Sébastien "Seblu" Luttringer <seblu@archlinux.org>
+# Contributor: Allan McRae <allan@archlinux.org>
+# Contributor: Andreas Radke <andyrtr@archlinux.org>
+
+pkgname=tar-multi
+_pkgname=tar
+pkgver=1.32
+pkgrel=3
+pkgdesc='Utility used to store, backup, and transport files, defaulting to multi-thread-backends.'
+arch=('aarch64')
+url='https://www.gnu.org/software/tar/'
+license=('GPL3')
+groups=('base')
+depends=('glibc' 'acl' 'attr' 'pigz' 'lbzip2' 'plzip')
+provides=("$_pkgname")
+conflicts=("$_pkgname")
+options=('!emptydirs')
+validpgpkeys=('325F650C4C2B6AD58807327A3602B07F55D0C732') # Sergey Poznyakoff
+source=("https://ftp.gnu.org/gnu/$_pkgname/$_pkgname-$pkgver.tar.xz"{,.sig}
+        "dirrem.patch")
+md5sums=('83e38700a80a26e30b2df054e69956e5'
+         'SKIP'
+         '10393495b5f53a357ed3c7d96eda47fd')
+
+prepare() {
+  cd $_pkgname-$pkgver
+  # apply patch from the source array (should be a pacman feature)
+  # dirrem.patch is probably only required for building in docker, check if it can be removed?
+  local filename
+  for filename in "${source[@]}"; do
+    if [[ "$filename" =~ \.patch$ ]]; then
+      msg2 "Applying patch ${filename##*/}"
+      patch -p1 -N -i "$srcdir/${filename##*/}"
+    fi
+  done
+  :
+}
+
+build() {
+  cd $_pkgname-$pkgver
+  ./configure --prefix=/usr --libexecdir=/usr/lib/tar \
+    --with-gzip=pigz \
+    --with-bzip2=lbzip2 \
+    --with-lzip=plzip
+  make
+}
+
+# check() {
+  # cd $_pkgname-$pkgver
+  # make check
+# }
+
+package() {
+  cd $_pkgname-$pkgver
+  make DESTDIR="$pkgdir" install
+}
+
+# vim:set ts=2 sw=2 et:

@@ -1,0 +1,29 @@
+pkgname=zram-swap-git
+_pkgname=zram-swap
+pkgver=01a.r0.gd70751d
+pkgrel=1
+pkgdesc="A simple zram swap service for modern systemd Linux"
+arch=('any')
+url="https://github.com/foundObjects/zram-swap.git"
+license=('MIT')
+depends=('systemd' 'bash')
+backup=('etc/default/zram-swap')
+source=('git+https://github.com/foundObjects/zram-swap.git')
+sha512sums=('SKIP')
+
+pkgver() {
+  cd ${_pkgname}
+  git describe --long | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+  cd ${_pkgname}
+  sed -i 's/local\/sbin/bin/g' ./service/zram-swap.service
+}
+
+package() {
+  cd ${_pkgname}
+  install -Dm0644 "$srcdir/${_pkgname}"/service/zram-swap.service "$pkgdir"/usr/lib/systemd/system/zram-swap.service
+  install -Dm0644 "$srcdir/${_pkgname}"/service/zram-swap.config "$pkgdir"/etc/default/zram-swap
+  install -Dm0755 "$srcdir/${_pkgname}"/zram-swap.sh "$pkgdir"/usr/bin/zram-swap.sh
+}

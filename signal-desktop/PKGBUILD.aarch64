@@ -1,0 +1,129 @@
+# Maintainer: Jean Lucas <jean@4ray.co>
+
+pkgname=signal-desktop
+_pkgname=Signal-Desktop
+pkgver=1.30.1
+pkgrel=1
+pkgdesc='Electron application that links with Signal on mobile'
+arch=(aarch64)
+url=https://signal.org
+license=(GPL3)
+replaces=('signal-desktop-bin')
+depends=(electron libvips)
+makedepends=(
+  yarn
+  git
+  git-lfs
+  'nodejs>=12.4.0'
+  npm
+  python
+  fpm
+  # nvm
+)
+provides=(signal)
+replaces=(signal)
+source=(
+  $pkgname-$pkgver.tar.gz::https://github.com/signalapp/$_pkgname/archive/v$pkgver.tar.gz
+  $pkgname.desktop
+  openssl-linking.patch
+  expire-from-source-date-epoch.patch
+  # can't use it directly bc git-lfs causes trouble
+  # "sqlcipher::git+https://github.com/scottnonnenberg-signal/node-sqlcipher.git#branch=updates"
+)
+sha512sums=('612a968e30571d4d3bf9d965a673ecc02bdd0a6def90b8f61a27e25160359862eb6f8fba854f82184e8cb707b04860a6c182951ab6b37f60d05fc374805ef639'
+            'c5ec0bf524e527ecf94207ef6aa1f2671346e115ec15de6d063cde0960151813752a1814e003705fc1a99d4e2eae1b3ca4d03432a50790957186e240527cc361'
+            '2c10d4cc6c0b9ca650e786c1e677f22619a78c93465f27fc4cf4831f1cfe771f3b9885a416e381a9e14c3aea5d88cb3545264046188db72d54b8567266811e51'
+            '6673066172d6c367961f3e2d762dd483e51a9f733d52e27d0569b333ad397375fd41d61b8a414b8c9e8dbba560a6c710678b3d105f8d285cb94d70561368d5a2')
+
+if [[ $CARCH == 'aarch64' ]]; then
+  makedepends+=('phantomjs')
+fi
+
+prepare() {
+  # Have SQLCipher dynamically link from OpenSSL
+  # See https://github.com/signalapp/Signal-Desktop/issues/2634
+  # patch -Np0 < ../openssl-linking.patch
+
+  git clone --depth=1 --branch updates https://github.com/scottnonnenberg-signal/node-sqlcipher.git sqlcipher
+  cd ${srcdir}/sqlcipher
+  git checkout updates
+  patch -Np3 -i ../openssl-linking.patch
+
+  cd ${srcdir}/$_pkgname-$pkgver
+
+  # Fix SpellChecker build with imminent Node 13
+  # See https://github.com/atom/node-spellchecker/issues/127
+  sed -r 's#("spellchecker": ").*"#\1https://github.com/atom/node-spellchecker/archive/613ff91dd2d9a5ee0e86be8a3682beecc4e94887.tar.gz"#' -i package.json
+
+  # Set system Electron version for ABI compatibility
+  sed -r 's#("electron": ").*"#\1'$(cat /usr/lib/electron/version)'"#' -i package.json
+
+  # npm config delete prefix
+
+  # use locally modified sqlcipher, bc yarn install always seems to checkout things freshly on aarm
+  sed -r 's#("@journeyapps/sqlcipher": ").*"#\1file:../sqlcipher"#' -i package.json
+
+  # Allow higher Node versions
+  sed 's#"node": "#&>=#' -i package.json
+
+  # Select node-gyp versions with python3 support
+  sed 's#"node-gyp": "5.0.3"#"node-gyp": "6.1.0"#' -i package.json
+  # https://github.com/sass/node-sass/pull/2841
+  # https://github.com/sass/node-sass/issues/2716
+  sed 's#"resolutions": {#"resolutions": {"node-sass/node-gyp": "^6.0.0",#' -i package.json
+
+
+  [[ $CARCH == "aarch64"  ]] && CFLAGS=`echo $CFLAGS | sed -e 's/-march=armv8-a//'` && CXXFLAGS="$CFLAGS"
+
+  # export NVM_DIR=${srcdir}/nvmdir
+  # mkdir -p $NVM_DIR
+  # source /usr/share/nvm/init-nvm.sh
+  # nvm install 12.4.0 && nvm use 12.4.0
+
+
+  # yarn grunt
+  # yarn icon-gen
+
+  # We can't read the release date from git so we use SOURCE_DATE_EPOCH instead
+  patch --forward --strip=1 --input="${srcdir}/expire-from-source-date-epoch.patch"
+
+  yarn install
+}
+
+build() {
+  cd $_pkgname-$pkgver
+  [[ $CARCH == "aarch64"  ]] && CFLAGS=`echo $CFLAGS | sed -e 's/-march=armv8-a//'` && CXXFLAGS="$CFLAGS"
+
+  # otherwise, it'll try to run x86_64-fpm..
+  export USE_SYSTEM_FPM="true"
+
+  # export NVM_DIR=${srcdir}/nvmdir
+  # mkdir -p $NVM_DIR
+  # source /usr/share/nvm/init-nvm.sh
+  # nvm use 12.4.0
+
+  # Gruntfile expects Git commit information which we don't have in a tarball download
+  # See https://github.com/signalapp/Signal-Desktop/issues/2376
+  yarn generate exec:build-protobuf exec:transpile concat copy:deps sass
+
+  yarn build-release --arm64 --linux # --dir
+}
+
+package() {
+  cd $_pkgname-$pkgver
+
+  install -d "$pkgdir"/usr/{lib,bin}
+  cp -a release/linux-arm64-unpacked/resources "$pkgdir"/usr/lib/$pkgname
+  cat << EOF > "$pkgdir"/usr/bin/$pkgname
+#!/bin/sh
+
+NODE_ENV=production electron /usr/lib/$pkgname/app.asar "\$@"
+EOF
+  chmod +x "$pkgdir"/usr/bin/$pkgname
+
+  install -Dm 644 ../$pkgname.desktop -t "$pkgdir"/usr/share/applications
+  for i in 16 24 32 48 64 128 256 512 1024; do
+    install -Dm 644 build/icons/png/${i}x${i}.png \
+      "$pkgdir"/usr/share/icons/hicolor/${i}x${i}/apps/$pkgname.png
+  done
+}

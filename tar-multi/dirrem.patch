@@ -1,0 +1,17 @@
+diff --git a/tests/testsuite.at b/tests/testsuite.at
+index 2a83757..4d86ff1 100644
+--- a/tests/testsuite.at
++++ b/tests/testsuite.at
+@@ -345,9 +345,9 @@ AT_BANNER([Files removed while archiving])
+ m4_include([filerem01.at])
+ m4_include([filerem02.at])
+ 
+-AT_BANNER([Directories removed while archiving])
+-m4_include([dirrem01.at])
+-m4_include([dirrem02.at])
++dnl  AT_BANNER([Directories removed while archiving])
++dnl  m4_include([dirrem01.at])
++dnl  m4_include([dirrem02.at])
+ 
+ AT_BANNER([Renames])
+ m4_include([rename01.at])
