@@ -6,7 +6,7 @@
 _pkgname='ferdi'
 pkgname="$_pkgname-git"
 pkgver=5.4.4_beta.1_r0_g2bbe3dfc
-pkgrel='4'
+pkgrel='6'
 pkgdesc='A messaging browser that allows you to combine your favorite messaging services into one application - git version'
 arch=('x86_64' 'i686' 'armv7h' 'aarch64')
 url="https://get$_pkgname.com"
@@ -48,8 +48,9 @@ esac
 _sourcedirectory="$pkgname"
 
 pkgver() {
-  cd "$srcdir/$_sourcedirectory/"
-  git describe --long --tags origin/master | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/_/g'
+        cd "$srcdir/$_sourcedirectory/"
+        # needs to be from origin/master for now, or we get the wrong version back
+        git describe --long --tags origin/master | sed 's/^v//;s/\([^-]*-g\)/r\1/;s/-/_/g'
 }
 
 prepare() {
@@ -60,9 +61,6 @@ prepare() {
         git config submodule.recipes.url "$srcdir/$pkgname-recipes"
         git config submodule.src/internal-server.url "$srcdir/$pkgname-internal-server"
         git submodule update --init --recursive
-
-        # Update submodules until https://github.com/getferdi/ferdi/pull/382 is merged
-        git submodule update --remote
 
         # Set system Electron version for ABI compatibility
         sed -E -i 's|("electron": ").*"|\1'"$(cat /usr/lib/electron/version)"'"|' 'package.json'
@@ -92,7 +90,10 @@ build() {
         export npm_config_devdir="$srcdir/$pkgname-npm-dev"
         export npm_config_cache="$srcdir/$pkgname-npm-cache"
 
-        npm rebuild node-sass
+        # no node-sass available for arm; need to build/rebuild it
+        if [[ ${_electronbuilderarch} == 'arm64' || ${_electronbuilderarch} == 'armv7l' ]]; then
+          npm rebuild node-sass
+        fi
         npx gulp build
         npx electron-builder --linux dir "--$_electronbuilderarch" -c.electronDist='/usr/lib/electron' -c.electronVersion="$(cat /usr/lib/electron/version)"
 }
