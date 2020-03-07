@@ -4,8 +4,8 @@
 # Contributor: Pieter Goetschalckx <3.14.e.ter <at> gmail <dot> com>
 _pkgname='ferdi'
 pkgname="$_pkgname-git"
-pkgver=5.4.4_beta.1_r0_g2bbe3dfc
-pkgrel='1'
+pkgver=5.4.4_beta.2_r10_ge043795a
+pkgrel=1
 pkgdesc='A messaging browser that allows you to combine your favorite messaging services into one application - git version'
 arch=('x86_64' 'i686' 'armv7h' 'aarch64')
 url="https://get$_pkgname.com"
@@ -29,16 +29,16 @@ _sourcedirectory="$pkgname"
 
         case "$CARCH" in
                 i686)
-                        local _electronbuilderarch='ia32'
+                        _electronbuilderarch='ia32'
                 ;;
                 armv7h)
-                        local _electronbuilderarch='armv7l'
+                        _electronbuilderarch='armv7l'
                 ;;
                 aarch64)
-                        local _electronbuilderarch='arm64'
+                        _electronbuilderarch='arm64'
                 ;;
                 *)
-                        local _electronbuilderarch='x64'
+                        _electronbuilderarch='x64'
                 ;;
         esac
 
