@@ -13,24 +13,25 @@ so be careful. It's not my fault if your machine breaks or your house catches on
 
 [Librewolf, a more privacy focused Firefox-(not-really-a-)fork](https://gitlab.com/librewolf-community/browser/arch), also in the AUR (-bin and regular flavor.)
 
-[Inox, a very slightly modified ungoogled-chromium](https://github.com/lsfxz/ungoogled-chromium-archlinux/tree/inox). No binaries there as I'm not comfortable actually distributing something with the inox
-naming/branding – that was [not my work](https://github.com/gcarq/inox-patchset) and I just like to keep an unmodified chromium available next to an ungoogled one,
-so the naming/branding differences suited me well. Most people would probably want to stick to the regular ungoogled-chromium;
-if demand was there I'd happily manage a separate aarch64 PKGBUILD / binary for that as well.
+[Caidao, a very slightly modified ungoogled-chromium](https://gitlab.com/ohfp/caidao). I just like to keep an unmodified chromium available next to an ungoogled one.
 
 ## bitwarden
 
 Based on [aur/bitwarden](https://aur.archlinux.org/packages/bitwarden).
 
-## ferdi / ferdi-git
+## ferdi-git
 
-Based on [aur/ferdi-git](https://aur.archlinux.org/packages/ferdi-git) and [aur/ferdi](https://aur.archlinux.org/packages/ferdi).
+Based on [aur/ferdi-git](https://aur.archlinux.org/packages/ferdi-git), until the [merge request over there](https://gitlab.com/dpeukert/pkgbuilds/-/merge_requests/2) gets merged someday.
 
 ## luks
 
 This just gives a hint at what to modify to get LUKS working with uboot on ManjaroARM on the PBP;
 mostly it's about getting the boot.txt to actually load the initramfs (default config just doesn't even attempt to load it,
 it seems.) and including all the modules required to init the eDP.
+
+## nordnm-git
+
+This just mirrors/tracks the [AUR package](https://aur.archlinux.org/packages/nordnm-git).
 
 ## rtl88x2bu-dkms-git
 
