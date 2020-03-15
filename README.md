@@ -1,5 +1,9 @@
 # PBP-Things
 
+**ATTENTION:** This repository has been moved to gitlab:
+
+https://gitlab.com/ohfp/pinebookpro-things
+
 ## What's this about?
 
 Some odds and ends related to the Pinebook Pro, collected in one place to avoid just having them posted somewhere around the web.
